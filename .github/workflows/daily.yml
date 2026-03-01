@@ -1,0 +1,30 @@
+name: Daily Commit
+
+on:
+  schedule:
+    - cron: "0 3 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  commit:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Update progress file
+        run: |
+          echo "Update: $(date)" >> progress.log
+
+      - name: Commit
+        run: |
+          git config user.name "cristian-bravo"
+          git config user.email "ktc1cristian@gmail.com"
+          git add progress.log
+          git commit -m "chore: daily auto update" || echo "No changes"
+
+      - name: Push
+        run: git push
