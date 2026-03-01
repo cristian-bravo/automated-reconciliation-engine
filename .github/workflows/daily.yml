@@ -13,18 +13,20 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+          fetch-depth: 0
 
-      - name: Update progress file
+      - name: Update progress log
         run: |
-          echo "Update: $(date)" >> progress.log
+          echo "Update: $(date +'%Y-%m-%d %H:%M:%S')" >> progress.log
 
-      - name: Commit
+      - name: Commit & Push
         run: |
           git config user.name "cristian-bravo"
           git config user.email "ktc1cristian@gmail.com"
-          git add progress.log
-          git commit -m "chore: daily auto update" || echo "No changes"
 
-      - name: Push
-        run: git push
+          git add -f progress.log
+          git commit -m "chore(log): daily update $(date +'%Y-%m-%d')" || exit 0
+          git push
