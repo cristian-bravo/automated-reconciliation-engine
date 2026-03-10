@@ -1,4 +1,4 @@
-# Conciliacion Vega Supermercados
+# Conciliacion
 
 Sistema de conciliacion automatica entre movimientos bancarios y archivos TRS de los locales de Vega.
 
