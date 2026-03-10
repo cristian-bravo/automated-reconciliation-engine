@@ -5,6 +5,7 @@ from config import INPUT_DIR, INPUT_RANGE_DIR, LOCALES
 from core.logger import log_warning
 
 LOCAL_CODES = set(LOCALES.keys())
+BANK_EXTENSIONS = {".pdf", ".xls", ".xlsx", ".xlsb", ".xlsm"}
 
 
 def _listdir_safe(path, alias):
@@ -22,6 +23,12 @@ def _listdir_safe(path, alias):
 
 def _warn_archivo_ignorado(nombre, motivo="nombre no reconocido"):
     log_warning(f"\u26A0\uFE0F Archivo ignorado: {motivo} ({nombre})")
+
+
+def _es_archivo_banco(nombre):
+    low = nombre.lower()
+    ext = os.path.splitext(low)[1]
+    return "trs" not in low and ext in BANK_EXTENSIONS
 
 
 def _extraer_fecha(nombre: str):
@@ -52,7 +59,7 @@ def detectar_archivos():
 
         low = f.lower()
 
-        if ("mov" in low or "movimientos" in low) and ("trs" not in low):
+        if _es_archivo_banco(f):
             if fecha in mov_files:
                 log_warning(f"\u26A0\uFE0F {fecha} \u2192 archivo Banco duplicado (se ignora)")
                 continue
@@ -111,7 +118,7 @@ def detectar_archivos_rango():
         if rango_key not in rangos_files:
             rangos_files[rango_key] = {"mov_paths": [], "trs_por_local_paths": {}}
 
-        if ("mov" in low or "movimientos" in low) and ("trs" not in low):
+        if _es_archivo_banco(f):
             rangos_files[rango_key]["mov_paths"].append(full)
             continue
 

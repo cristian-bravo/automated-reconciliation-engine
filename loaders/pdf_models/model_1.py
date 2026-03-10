@@ -1,4 +1,8 @@
+import re
+import unicodedata
+
 import pandas as pd
+import pdfplumber
 
 from core.mov_helpers import extraer_caja_texto
 from loaders.mov_pdf2 import limpiar_movimientos_pdf2
@@ -48,16 +52,68 @@ def _standardize_output(df):
     return out[_CANONICAL_COLS]
 
 
+def _normalize_text(value):
+    if value is None:
+        return ""
+    text = str(value)
+    text = unicodedata.normalize("NFKD", text)
+    text = "".join(ch for ch in text if not unicodedata.combining(ch))
+    text = text.upper()
+    return re.sub(r"\s+", " ", text).strip()
+
+
+def _extract_first_pages_text(path, max_pages=2):
+    chunks = []
+
+    with pdfplumber.open(path) as pdf:
+        for page in pdf.pages[:max_pages]:
+            text = page.extract_text() or ""
+            if text:
+                chunks.append(_normalize_text(text))
+
+    return " ".join(chunks)
+
+
+def _select_parsers_for_model_1(path):
+    try:
+        text = _extract_first_pages_text(path)
+    except Exception:
+        text = ""
+
+    if (
+        "FECHA OFICINA TIPO CONCEPTO" in text
+        and "MONTO SALDO" in text
+        and ("NRO DOCUMENTO" in text or "NRO. DOCUMENTO" in text or "NUMERO DE DOCUMENTO" in text)
+    ):
+        return (
+            limpiar_movimientos_pdf_header_unica,
+            limpiar_movimientos_pdf2,
+            limpiar_movimientos_pdf_portada,
+        )
+
+    if (
+        "FECHA CONCEPTO TIPO MONTO SALDO" in text
+        and "DOCUMENTO BENEFICIARIA" in text
+    ):
+        return (
+            limpiar_movimientos_pdf2,
+            limpiar_movimientos_pdf_portada,
+            limpiar_movimientos_pdf_header_unica,
+        )
+
+    return (
+        limpiar_movimientos_pdf_portada,
+        limpiar_movimientos_pdf2,
+        limpiar_movimientos_pdf_header_unica,
+    )
+
+
 def parse_model_1(path):
     """
     Parser del modelo principal (PDF_MODEL_1).
     Agrupa variantes históricas del formato principal y mantiene salida canónica.
     """
-    parsers = (
-        limpiar_movimientos_pdf_header_unica,
-        limpiar_movimientos_pdf_portada,
-        limpiar_movimientos_pdf2,
-    )
+    parsers = _select_parsers_for_model_1(path)
 
     last_exc = None
 
@@ -75,4 +131,3 @@ def parse_model_1(path):
         raise last_exc
 
     return _standardize_output(pd.DataFrame(columns=_CANONICAL_COLS))
-

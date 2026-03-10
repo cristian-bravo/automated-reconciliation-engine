@@ -1,6 +1,6 @@
 pandas
 openpyxl
 xlrd
+pyxlsb
 pdfplumber
 reportlab
-

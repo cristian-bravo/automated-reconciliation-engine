@@ -16,7 +16,7 @@ def _ensure_colab_dependencies():
     if not is_running_in_colab():
         return
 
-    required_modules = ("pandas", "openpyxl", "xlrd", "pdfplumber", "reportlab")
+    required_modules = ("pandas", "openpyxl", "xlrd", "pyxlsb", "pdfplumber", "reportlab")
     missing = [name for name in required_modules if importlib.util.find_spec(name) is None]
     if not missing:
         return
@@ -58,4 +58,3 @@ def setup_environment():
         "resumen_snapshot_before_cleanup": _snapshot_file(resumen_mensual_path),
         "is_colab": is_running_in_colab(),
     }
-

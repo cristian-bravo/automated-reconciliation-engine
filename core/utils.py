@@ -17,12 +17,34 @@ def normalize_doc(x):
 def normalize_amount(x):
     if pd.isna(x):
         return None
-    s = str(x).replace("$", "").replace(" ", "")
-    # soporta 1.234,56 y 1234.56
-    if s.count(",") == 1 and s.count(".") >= 1:
-        s = s.replace(".", "").replace(",", ".")
-    else:
-        s = s.replace(",", ".")
+
+    if isinstance(x, (int, float)) and not isinstance(x, bool):
+        return round(float(x), 2)
+
+    s = str(x).strip().replace("$", "").replace(" ", "").replace("\u00A0", "")
+    if not s:
+        return None
+
+    if "," in s and "." in s:
+        if s.rfind(",") > s.rfind("."):
+            s = s.replace(".", "").replace(",", ".")
+        else:
+            s = s.replace(",", "")
+    elif s.count(",") > 1:
+        s = s.replace(",", "")
+    elif s.count(",") == 1:
+        left, right = s.split(",", 1)
+        if len(right) == 2:
+            s = f"{left}.{right}"
+        else:
+            s = f"{left}{right}"
+    elif s.count(".") > 1:
+        parts = s.split(".")
+        if len(parts[-1]) == 2:
+            s = "".join(parts[:-1]) + "." + parts[-1]
+        else:
+            s = "".join(parts)
+
     try:
         return round(float(s), 2)
     except:
